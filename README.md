@@ -8,10 +8,11 @@ Originally created for [Nostalgic for Things to Come](https://youtube.com/playli
 
 ## What it does
 
-1. **`generate-shorts.py`** — Takes audio files + video loops, generates vertical 1080x1920 Shorts with animated waveforms, text overlays, and branded visuals using ffmpeg + librosa + Pillow
+1. **`generate-shorts.py`** — Takes audio files + video loops, generates vertical 1080x1920 Shorts/Reels with animated waveforms, text overlays, and branded visuals using ffmpeg + librosa + Pillow
 2. **`youtube-upload.py`** — Uploads Shorts to YouTube as private with scheduled publish times (OAuth2, resumable uploads)
-3. **`fetch-youtube-analytics.py`** — Pulls channel stats, per-video performance, traffic sources, and flags concerns (high swipe-away rates, declining views)
-4. **`youtube-auth.py`** — Two-step OAuth2 setup for headless servers
+3. **`facebook-reel-upload.py`** — Uploads the same generated MP4s to Facebook Reels via the Facebook Graph API
+4. **`fetch-youtube-analytics.py`** — Pulls channel stats, per-video performance, traffic sources, and flags concerns (high swipe-away rates, declining views)
+5. **`youtube-auth.py`** — Two-step OAuth2 setup for headless servers
 
 ## Full pipeline — from zero to YouTube channel
 
@@ -69,7 +70,11 @@ cp .env.example .env
 # Add your YouTube OAuth client ID and secret from Google Cloud Console
 # Required APIs: YouTube Data API v3, YouTube Analytics API
 
-# Authenticate
+# Optional: configure Facebook Reels upload
+# Add FACEBOOK_PAGE_ID and FACEBOOK_PAGE_ACCESS_TOKEN to .env
+# Required Meta setup: Facebook Page + app/token with permission to publish Reels to that Page
+
+# Authenticate YouTube
 python3 youtube-auth.py url    # Opens auth URL
 python3 youtube-auth.py code YOUR_CODE  # Saves token
 
@@ -132,16 +137,22 @@ Tip: Listen to each track, find the best 10-second moment, note the timestamp.
 ### Step 5: Generate, upload, track
 
 ```bash
-# Generate Shorts
+# Generate Shorts/Reels MP4s
 python3 generate-shorts.py --phase 1
 
-# Preview upload without actually uploading
+# Preview YouTube upload without actually uploading
 python3 youtube-upload.py --dry-run --phase 1
 
-# Upload for real (private + scheduled)
+# Upload to YouTube for real (private + scheduled)
 python3 youtube-upload.py --phase 1
 
-# Check how they're doing
+# Preview Facebook Reels upload without actually uploading
+python3 facebook-reel-upload.py --dry-run --phase 1
+
+# Upload to Facebook Reels for real
+python3 facebook-reel-upload.py --phase 1
+
+# Check how YouTube uploads are doing
 python3 fetch-youtube-analytics.py
 ```
 
@@ -168,6 +179,9 @@ generate-shorts.py
 youtube-upload.py
 └── OAuth2 → private + scheduled publish
 
+facebook-reel-upload.py
+└── Graph API → publish same MP4s as Facebook Reels
+
     ↓
 
 fetch-youtube-analytics.py
@@ -189,7 +203,8 @@ Analyze → adjust layout → repeat
 ├── catalog.json        # Video catalog (titles, URLs, chapters)
 ├── track-analysis.json # Peak segment analysis per track
 ├── shorts-schedule.json# Upload schedule (dates, slots, phases)
-└── youtube-token.json  # OAuth token (auto-generated, gitignored)
+├── youtube-token.json  # YouTube OAuth token (auto-generated, gitignored)
+└── .env                # YouTube/Facebook credentials (gitignored)
 ```
 
 ## Customization
@@ -237,6 +252,7 @@ slot_hours = {"AM": 10, "PM": 16, "EVE": 20}
 - **Midjourney**: $10/mo (or use free alternatives like Pika/Kling)
 - **Runway**: Free tier available (or use free alternatives)
 - **YouTube API**: Free
+- **Facebook Graph API**: Free (requires a Facebook Page and a Meta app/Page access token)
 - **This pipeline**: Free, forever
 
 Everything except Suno has a free path. Total cost to run a channel: $0-20/mo.
